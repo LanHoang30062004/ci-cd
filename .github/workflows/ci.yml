@@ -14,24 +14,32 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
+      - name: Set up JDK 8
+        uses: actions/setup-java@v5
         with:
-          distribution: "temurin"
-          java-version: "8" # Hoặc phiên bản Java project bạn đang dùng
+          distribution: "zulu" # Zulu hỗ trợ đầy đủ Java 8 trên cả 3 OS
+          java-version: "8"
 
       - name: Grant execute permission for gradlew
+        if: runner.os != 'Windows'
         run: chmod +x gradlew
 
-      - name: Build with Gradle
+      - name: Build with Gradle (Linux / macOS)
+        if: runner.os != 'Windows'
         run: ./gradlew build -x test
 
+      - name: Build with Gradle (Windows)
+        if: runner.os == 'Windows'
+        run: .\gradlew.bat build -x test
+
       - name: Build and Push Docker Image
+        if: runner.os == 'Linux' # Chỉ thực hiện đóng gói và push từ Ubuntu
         uses: mr-smithers-excellent/docker-build-push@v4
         with:
           image: maihoanglan/demo-app
